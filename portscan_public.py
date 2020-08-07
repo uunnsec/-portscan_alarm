@@ -14,6 +14,8 @@ r = redis.StrictRedis(host=redis_host, port=port, db=db)
 warnings.filterwarnings("ignore")
 
 def get_portscans_list():
+    mark1 = 0
+    mark2 = 0
     for k, v in dict.items():
         url = 'https://0.0.0.0:443/scans/%s/plugins/11219' % v
         accesskey = '*************************************'
@@ -39,6 +41,7 @@ def get_portscans_list():
                 oldVal = r.get(k)
                 oldVal = str(oldVal, encoding='utf-8')
                 if val != oldVal:
+                    mark1 += 1
                     r.set(k, val)
 
                     print(k, 'oldscan', oldVal, 'currentscan', val)
@@ -59,6 +62,7 @@ def get_portscans_list():
                 oldVal = r.get(k)
                 oldVal = str(oldVal, encoding='utf-8')
                 if "" != oldVal:
+                    mark2 += 1
                     r.set(k, "")
 
                     print(k, 'oldscan', oldVal, 'currentscan', '')
@@ -76,5 +80,15 @@ def get_portscans_list():
                     print(k, 'port eq and oldscan = currentscan and none')
         else:
             print('not vpc')
+    if mark1 == 0 and mark2 == 0:
+        message = MIMEText('本次扫描各vpc已开启端口无变化', 'plain', 'utf-8')
+        message['From'] = Header(sender, 'utf-8')
+        message['To'] = Header(receivers, 'utf-8')
+        subject = '【端口监测】'
+        message['Subject'] = Header(subject, 'utf-8')
+        smtpObj = smtplib.SMTP()
+        smtpObj.connect(mail_host, 25)
+        smtpObj.login(mail_user, mail_pass)
+        smtpObj.sendmail(sender, receivers, message.as_string())
 
 portscan = get_portscans_list()
