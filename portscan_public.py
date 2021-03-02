@@ -16,8 +16,6 @@ r = redis.StrictRedis(host=redis_host, port=port, db=db)
 warnings.filterwarnings("ignore")
 
 def get_portscans_list():
-    mark1 = 0
-    mark2 = 0
     data = datetime.date.today()
     filename = str(data) + '.txt'
 
@@ -46,7 +44,6 @@ def get_portscans_list():
                 oldVal = r.get(k)
                 oldVal = str(oldVal, encoding='utf-8')
                 if val != oldVal:
-                    mark1 += 1
                     r.set(k, val)
 
                     # 将本次端口对比结果保存到txt文件中
@@ -65,7 +62,6 @@ def get_portscans_list():
                 oldVal = r.get(k)
                 oldVal = str(oldVal, encoding='utf-8')
                 if "" != oldVal:
-                    mark2 += 1
                     r.set(k, "")
                     # 将本次端口对比结果保存到txt文件中
                     content = ('vpc: %s\nLast      Scan: %s\nCurrent Scan: %s' % (k, oldVal, val))
