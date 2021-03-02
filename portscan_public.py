@@ -22,9 +22,9 @@ def get_portscans_list():
     filename = str(data) + '.txt'
 
     for k, v in dict.items():
-        url = 'https://139.198.5.19:443/scans/%s/plugins/11219' % v
-        accesskey = '0cc5f98277fbb1ed1a531b2583b59a71a919916ac28f2623665219685be77719'
-        secretkey = '175651c3a34a8eb835e2cbb8246bcc54e9f8a6c5e331ddc20725841b9950ecc3'
+        url = 'https://x.x.x.x/scans/%s/plugins/11219' % v
+        accesskey = 'xxxxxx'
+        secretkey = 'xxxxxx'
         headers = {
             'X-ApiKeys': 'accessKey={accesskey};secretKey={secretkey}'.format(accesskey=accesskey, secretkey=secretkey),
             'Content-type': 'application/json',
