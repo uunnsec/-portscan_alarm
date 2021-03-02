@@ -3,6 +3,8 @@
 import requests
 import json
 import redis
+import os
+import datetime
 import smtplib
 import re
 import warnings
@@ -16,10 +18,13 @@ warnings.filterwarnings("ignore")
 def get_portscans_list():
     mark1 = 0
     mark2 = 0
+    data = datetime.date.today()
+    filename = str(data) + '.txt'
+
     for k, v in dict.items():
-        url = 'https://0.0.0.0:443/scans/%s/plugins/11219' % v
-        accesskey = '*************************************'
-        secretkey = '*************************************'
+        url = 'https://139.198.5.19:443/scans/%s/plugins/11219' % v
+        accesskey = '0cc5f98277fbb1ed1a531b2583b59a71a919916ac28f2623665219685be77719'
+        secretkey = '175651c3a34a8eb835e2cbb8246bcc54e9f8a6c5e331ddc20725841b9950ecc3'
         headers = {
             'X-ApiKeys': 'accessKey={accesskey};secretKey={secretkey}'.format(accesskey=accesskey, secretkey=secretkey),
             'Content-type': 'application/json',
@@ -44,17 +49,15 @@ def get_portscans_list():
                     mark1 += 1
                     r.set(k, val)
 
-                    print(k, 'oldscan', oldVal, 'currentscan', val)
+                    # 将本次端口对比结果保存到txt文件中
+                    content = ('vpc: %s\nLast      Scan: %s\nCurrent Scan: %s' % (k, oldVal, val))
+                    print(content)
+                    f = open(filename, 'a')
+                    f.writelines('\n' + content + '\n')
+                    f.close()
 
-                    message = MIMEText('vpc: %s\nLast      Scan: %s\nCurrent Scan: %s' % (k, oldVal, val), 'plain', 'utf-8')
-                    message['From'] = Header(sender, 'utf-8')
-                    message['To'] = Header(receivers, 'utf-8')
-                    subject = '【端口监测】'
-                    message['Subject'] = Header(subject, 'utf-8')
-                    smtpObj = smtplib.SMTP()
-                    smtpObj.connect(mail_host, 25)
-                    smtpObj.login(mail_user, mail_pass)
-                    smtpObj.sendmail(sender, receivers, message.as_string())
+                    # print(k, 'oldscan', oldVal, 'currentscan', val)
+
                 else:
                     print(k, 'port eq and oldscan = currentscan')
             else:
@@ -64,23 +67,35 @@ def get_portscans_list():
                 if "" != oldVal:
                     mark2 += 1
                     r.set(k, "")
+                    # 将本次端口对比结果保存到txt文件中
+                    content = ('vpc: %s\nLast      Scan: %s\nCurrent Scan: %s' % (k, oldVal, val))
+                    print(content)
+                    f = open(filename, 'a')
+                    f.writelines('\n' + content + '\n')
+                    f.close()
 
-                    print(k, 'oldscan', oldVal, 'currentscan', '')
+                    # print(k, 'oldscan', oldVal, 'currentscan', '')
 
-                    message = MIMEText('vpc: %s\nLast      Scan: %s\nCurrent Scan: %s' % (k, oldVal, ''), 'plain','utf-8')
-                    message['From'] = Header(sender, 'utf-8')
-                    message['To'] = Header(receivers, 'utf-8')
-                    subject = '【端口监测】'
-                    message['Subject'] = Header(subject, 'utf-8')
-                    smtpObj = smtplib.SMTP()
-                    smtpObj.connect(mail_host, 25)
-                    smtpObj.login(mail_user, mail_pass)
-                    smtpObj.sendmail(sender, receivers, message.as_string())
                 else:
                     print(k, 'port eq and oldscan = currentscan and none')
         else:
             print('not vpc')
-    if mark1 == 0 and mark2 == 0:
+
+    if os.path.isfile(filename) == True:
+        # 读取txt文件内容
+        with open(filename) as f:
+            content = f.read()
+            # 发送告警邮件
+            message = MIMEText(content, 'plain','utf-8')
+            message['From'] = Header(sender, 'utf-8')
+            message['To'] = Header(receivers, 'utf-8')
+            subject = '【端口监测】'
+            message['Subject'] = Header(subject, 'utf-8')
+            smtpObj = smtplib.SMTP()
+            smtpObj.connect(mail_host, 25)
+            smtpObj.login(mail_user, mail_pass)
+            smtpObj.sendmail(sender, receivers, message.as_string())
+    else:
         message = MIMEText('本次扫描各vpc已开启端口无变化', 'plain', 'utf-8')
         message['From'] = Header(sender, 'utf-8')
         message['To'] = Header(receivers, 'utf-8')
